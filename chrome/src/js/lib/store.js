@@ -3,8 +3,8 @@ import EventEmitter from './EventEmitter'
 class Store extends EventEmitter {
   constructor () {
     super()
-    this.defaultRPC = [{name: 'ARIA2 RPC', url: 'http://localhost:6800/jsonrpc'}]
-    this.defaultUserAgent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36'
+    this.defaultRPC = [{ name: 'ARIA2 RPC', url: 'http://localhost:6800/jsonrpc' }]
+    this.defaultUserAgent = 'netdisk;6.0.0.12;PC;PC-Windows;10.0.16299;WindowsBaiduYunGuanJia'
     this.defaultReferer = 'https://pan.baidu.com/disk/home'
     this.defaultConfigData = {
       rpcList: this.defaultRPC,
@@ -25,7 +25,7 @@ class Store extends EventEmitter {
   init () {
     chrome.storage.sync.get(null, (items) => {
       for (let key in items) {
-        chrome.storage.local.set({key: items[key]}, () => {
+        chrome.storage.local.set({ key: items[key] }, () => {
           console.log('chrome first local set: %s, %s', key, items[key])
         })
       }
@@ -49,11 +49,11 @@ class Store extends EventEmitter {
   }
   save (configData) {
     for (let key in configData) {
-      chrome.storage.local.set({[key]: configData[key]}, () => {
+      chrome.storage.local.set({ [key]: configData[key] }, () => {
         console.log('chrome local set: %s, %s', key, configData[key])
       })
       if (configData['configSync'] === true) {
-        chrome.storage.sync.set({[key]: configData[key]}, () => {
+        chrome.storage.sync.set({ [key]: configData[key] }, () => {
           console.log('chrome sync set: %s, %s', key, configData[key])
         })
       }
