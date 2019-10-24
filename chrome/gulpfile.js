@@ -1,8 +1,9 @@
 const gulp = require('gulp')
-const babelify = require('babelify')
-const browserify = require('browserify')
-const tap = require('gulp-tap')
-const buffer = require('gulp-buffer')
+
+const rollupEach = require('gulp-rollup-each')
+const rollupBabel = require('rollup-plugin-babel')
+const rollupResolve = require('rollup-plugin-node-resolve')
+const rollupCommon = require('rollup-plugin-commonjs')
 
 const del = require('del')
 const gulpIf = require('gulp-if')
@@ -15,7 +16,7 @@ const postcss = require('gulp-postcss')
 const sass = require('gulp-sass')
 const autoprefixer = require('autoprefixer')
 const concat = require('gulp-concat')
-const cssmin = require('gulp-cssmin')
+const cleanCSS = require('gulp-clean-css')
 
 const imagemin = require('gulp-imagemin')
 const mozjpeg = require('imagemin-mozjpeg')
@@ -30,9 +31,11 @@ const cssTargets = ['./src/css/**/*.scss']
 const imageTargets = ['./src/img/**/*']
 const copyTarget = ['./_locales/**/*', 'background.js', 'manifest.json']
 const config = {
-  errorHandler: function (err) {
-    console.log(err.toString())
-    this.emit('end')
+  plumberConfig: {
+    errorHandler: function (err) {
+      console.log(err.toString())
+      this.emit('end')
+    }
   },
   env: {
     dev: process.env.NODE_ENV === 'development',
@@ -61,13 +64,22 @@ gulp.task('js', function () {
     .pipe(plumber(config.plumberConfig))
     .pipe(eslint())
     .pipe(eslint.format())
-    .pipe(tap(function (file) {
-      console.log('bundling ' + file.path)
-      // replace file contents with browserify's bundle stream
-      file.contents = browserify(file.path, { debug: config.env.dev }).transform(babelify, { presets: ['@babel/preset-env'] }).bundle().on('error', config.errorHandler)
-    }))
-    .pipe(buffer())
     .pipe(gulpIf(config.env.dev, sourcemaps.init({ loadMaps: true })))
+    .pipe(rollupEach({
+      isCache: true,
+      plugins: [
+        rollupBabel({
+          presets: ['@babel/preset-env']
+        }),
+        rollupResolve({
+          browser: true
+        }),
+        rollupCommon()
+      ]},
+      {
+        format: 'iife'
+      }
+      ))
     // write sourcemaps
     .pipe(gulpIf(config.env.dev, sourcemaps.write()))
     .pipe(gulpIf(config.env.prod, uglify()))
@@ -96,7 +108,7 @@ gulp.task('css', function () {
     ]))
     .pipe(concat('style.css'))
     .pipe(gulpIf(config.env.dev, sourcemaps.write()))
-    .pipe(gulpIf(config.env.prod, cssmin()))
+    .pipe(gulpIf(config.env.prod, cleanCSS()))
     .pipe(gulp.dest('dist/css/'))
 })
 
